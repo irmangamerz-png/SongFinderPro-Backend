@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SongFinder Pro</title>
+    <!-- Tailwind CSS & Font Awesome (Sesuai UI Asli Anda) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
+
+    <!-- HEADER ASLI -->
+    <header class="w-full border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-music text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">SongFinder Pro</h1>
+                    <p class="text-xs text-slate-400">Kenali lagu dari URL, Video, atau File Audio</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER (UI ASLI DI PERTAHANKAN) -->
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-grow flex flex-col items-center justify-center">
+        <div class="w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+            
+            <!-- INPUT SECTION -->
+            <div class="space-y-6">
+                <!-- Tab / Pilihan Input (URL / File) -->
+                <div>
+                    <label for="queryInput" class="block text-sm font-medium text-slate-300 mb-2">
+                        <i class="fa-solid fa-link text-cyan-400 mr-2"></i>Masukkan URL (YouTube, TikTok, dll) atau Judul Lagu:
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="queryInput" placeholder="https://youtube.com/... atau Judul Lagu Artis" 
+                            class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition">
+                        <button id="btnSubmitUrl" onclick="submitUrlQuery()" 
+                            class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-cyan-600/20 flex items-center justify-center">
+                            <i class="fa-solid fa-magnifying-glass mr-2"></i> Cari
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-slate-500 text-xs uppercase tracking-widest font-semibold">Atau Upload Audio</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <!-- File Upload -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">
+                        <i class="fa-solid fa-file-audio text-cyan-400 mr-2"></i>Upload File Audio (Max 25 MB):
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="audioFileInput" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-800 border-dashed rounded-xl cursor-pointer bg-slate-950 hover:bg-slate-900/50 transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6 px-4">
+                                <i class="fa-solid fa-cloud-arrow-up text-cyan-400 text-2xl mb-2"></i>
+                                <p class="mb-2 text-sm text-slate-400 text-center"><span class="font-semibold text-slate-200">Klik untuk upload</span> atau seret file kesini</p>
+                                <p class="text-xs text-slate-500" id="fileNameDisplay">MP3, WAV, FLAC, M4A (Maks. 25MB)</p>
+                            </div>
+                            <input type="file" id="audioFileInput" class="hidden" accept="audio/*" onchange="handleFileSelected(this)" />
+                        </label>
+                    </div>
+                    <button id="btnSubmitFile" onclick="submitAudioFile()" 
+                        class="w-full mt-3 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 py-3 rounded-xl font-medium transition flex items-center justify-center">
+                        <i class="fa-solid fa-upload mr-2"></i> Proses File Audio
+                    </button>
+                </div>
+            </div>
+
+            <!-- LOADING CONTAINER -->
+            <div id="loadingContainer" class="hidden mt-8 text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-cyan-500 border-t-transparent mb-3"></div>
+                <p class="text-slate-400 text-sm font-medium animate-pulse">Sedang menganalisis lagu, mohon tunggu sebentar...</p>
+            </div>
+
+            <!-- ERROR CONTAINER -->
+            <div id="errorContainer" class="hidden mt-6 bg-red-950/40 border border-red-900/50 text-red-300 p-4 rounded-xl text-sm flex items-center space-x-3">
+                <i class="fa-solid fa-circle-exclamation text-red-400 text-lg flex-shrink-0"></i>
+                <span id="errorMessageText">Terjadi kesalahan.</span>
+            </div>
+
+            <!-- RESULT CONTAINER (AMAN DARI XSS) -->
+            <div id="resultContainer" class="hidden mt-8 pt-6 border-t border-slate-800">
+                <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-circle-check text-green-400 mr-2"></i> Hasil Identifikasi Lagu
+                </h3>
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col md:flex-row gap-6 items-center">
+                    <img id="resultCover" src="" alt="Album Cover" class="w-32 h-32 object-cover rounded-lg shadow-md border border-slate-800 hidden">
+                    <div class="flex-grow space-y-2 text-center md:text-left w-full">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Judul Lagu</span>
+                            <h4 id="resultTitle" class="text-xl font-bold text-white"> - </h4>
+                        </div>
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Artis</span>
+                            <p id="resultArtist" class="text-slate-300 font-medium"> - </p>
+                        </div>
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Album</span>
+                            <p id="resultAlbum" class="text-slate-400 text-sm"> - </p>
+                        </div>
+                        <!-- Platform Links -->
+                        <div id="platformLinks" class="flex flex-wrap gap-3 pt-2 justify-center md:justify-start">
+                            <!-- Link diisi dinamis via JS secara aman -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER ASLI -->
+    <footer class="w-full border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <p>SongFinder Pro &copy; 2026. Hak cipta dilindungi.</p>
+    </footer>
+
+    <!-- LOGIKA JAVASCRIPT AMAN -->
+    <script>
+        // PERINGATAN: Ganti dengan URL Railway asli setelah deployment sukses
+        const BACKEND_URL = (window.SONGFINDER_BACKEND_URL || "https://YOUR-REAL-RAILWAY-URL.up.railway.app").replace(/\\/$/, "");
+
+        function showLoading(show) {
+            document.getElementById('loadingContainer').classList.toggle('hidden', !show);
+            if (show) {
+                document.getElementById('errorContainer').classList.add('hidden');
+                document.getElementById('resultContainer').classList.add('hidden');
+            }
+        }
+
+        function showError(msg) {
+            showLoading(false);
+            const errBox = document.getElementById('errorContainer');
+            document.getElementById('errorMessageText').textContent = msg;
+            errBox.classList.remove('hidden');
+        }
+
+        function handleFileSelected(input) {
+            const display = document.getElementById('fileNameDisplay');
+            if (input.files && input.files[0]) {
+                display.textContent = input.files[0].name;
+            } else {
+                display.textContent = "MP3, WAV, FLAC, M4A (Maks. 25MB)";
+            }
+        }
+
+        // 1. Submit URL / Query Lagu
+        async function submitUrlQuery() {
+            const queryVal = document.getElementById('queryInput').value.trim();
+            if (!queryVal) {
+                showError("Mohon masukkan URL atau judul lagu terlebih dahulu.");
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/recognize-url`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: queryVal })
+                });
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Server merespons bukan dalam format JSON (kemungkinan server mengalami gangguan atau timeout).");
+                }
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Gagal mengenali lagu.");
+                }
+
+                renderResult(data.result);
+            } catch (err) {
+                showError(err.message || "Gagal terhubung ke server backend.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 2. Submit File Audio (Validasi ukuran maks 25MB di frontend)
+        async function submitAudioFile() {
+            const fileInput = document.getElementById('audioFileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                showError("Pilih file audio terlebih dahulu.");
+                return;
+            }
+
+            const MAX_SIZE = 25 * 1024 * 1024;
+            if (file.size > MAX_SIZE) {
+                showError("Ukuran file terlalu besar! Maksimal ukuran file adalah 25 MB.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("audio", file);
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/recognize-file`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Server merespons bukan dalam format JSON yang valid.");
+                }
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Gagal mengenali file audio.");
+                }
+
+                renderResult(data.result);
+            } catch (err) {
+                showError(err.message || "Gagal terhubung ke server backend.");
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Render aman menggunakan textContent (Anti-XSS)
+        function renderResult(result) {
+            if (!result || !result.title) {
+                showError("Lagu tidak ditemukan atau tidak dapat diidentifikasi.");
+                return;
+            }
+
+            document.getElementById('resultTitle').textContent = result.title || "Tidak diketahui";
+            document.getElementById('resultArtist').textContent = result.artist || "Artis tidak diketahui";
+            document.getElementById('resultAlbum').textContent = result.album || "Album tidak diketahui";
+
+            const coverImg = document.getElementById('resultCover');
+            const imgUrl = result.spotify?.album?.images?.[0]?.url || result.apple_music?.artwork?.url || "";
+            if (imgUrl && /^https:\\/\\//i.test(imgUrl)) {
+                coverImg.src = imgUrl;
+                coverImg.classList.remove('hidden');
+            } else {
+                coverImg.removeAttribute('src');
+                coverImg.classList.add('hidden');
+            }
+
+            const linksContainer = document.getElementById('platformLinks');
+            linksContainer.innerHTML = "";
+
+            if (result.spotify?.external_urls?.spotify) {
+                const a = document.createElement('a');
+                a.href = result.spotify.external_urls.spotify;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "bg-green-600 hover:bg-green-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition inline-flex items-center";
+                a.innerHTML = '<i class="fa-brands fa-spotify mr-2"></i> Spotify';
+                linksContainer.appendChild(a);
+            }
+
+            if (result.apple_music?.url) {
+                const a = document.createElement('a');
+                a.href = result.apple_music.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "bg-rose-600 hover:bg-rose-500 text-white text-xs px-4 py-2 rounded-lg font-medium transition inline-flex items-center";
+                a.innerHTML = '<i class="fa-brands fa-apple mr-2"></i> Apple Music';
+                linksContainer.appendChild(a);
+            }
+
+            document.getElementById('resultContainer').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
