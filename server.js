@@ -12,8 +12,8 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
-const YTDLP_TIMEOUT_MS = 15 * 1000;
-const AUDD_TIMEOUT_MS = 15 * 1000;
+const YTDLP_TIMEOUT_MS = 60 * 1000; // Diperbesar menjadi 60 detik agar aman untuk link TikTok & YouTube
+const AUDD_TIMEOUT_MS = 30 * 1000;  // 30 detik untuk AudD
 const FFPROBE_TIMEOUT_MS = 10 * 1000;
 
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || '*';
