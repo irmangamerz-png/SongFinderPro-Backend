@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SongFinder Pro - Final Edition</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 420px; box-sizing: border-box; }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #94a3b8; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input:focus { outline: none; border-color: #38bdf8; }
+        button { width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #0369a1; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 6px; font-size: 14px; display: none; }
+        .success { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .error { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
+        audio { width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🎵 SongFinder Pro</h2>
+        
+        <div class="input-group">
+            <label for="mediaUrl">Link YouTube / TikTok</label>
+            <input type="text" id="mediaUrl" placeholder="https://youtube.com/... atau tiktok.com/...">
+        </div>
+
+        <div class="input-group">
+            <label for="audioFile">Atau Upload File Audio (.mp3/.wav)</label>
+            <input type="file" id="audioFile" accept="audio/*">
+        </div>
+
+        <div class="input-group">
+            <label for="pinInput">PIN Mode Keluarga (Opsional)</label>
+            <input type="password" id="pinInput" placeholder="Masukkan PIN rahasia...">
+        </div>
+
+        <button onclick="searchSong()">Cari Lagu & Putar Klip Audio</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function searchSong() {
+            const mediaUrl = document.getElementById('mediaUrl').value;
+            const audioFile = document.getElementById('audioFile').files[0];
+            const pin = document.getElementById('pinInput').value;
+            const resultDiv = document.getElementById('result');
+
+            const formData = new FormData();
+            formData.append('mediaUrl', mediaUrl);
+            formData.append('pin', pin);
+            if (audioFile) {
+                formData.append('audioFile', audioFile);
+            }
+            formData.append('userId', 'user_browser_1');
+
+            try {
+                resultDiv.style.display = 'block';
+                resultDiv.className = '';
+                resultDiv.innerText = 'Memproses pencarian lagu...';
+
+                const res = await fetch('/api/songfinder', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Berhasil!</strong><br>
+                        ${data.message}<br><br>
+                        <strong>Lagu:</strong> ${data.result.songName}<br>
+                        <strong>Akurasi:</strong> ${data.result.matchAccuracy}<br><br>
+                        <label>Preview Klip Audio Sesuai:</label>
+                        <audio controls src="${data.result.audioClipUrl}"></audio>
+                    `;
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `<strong>❌ Akses Dibatasi:</strong><br>${data.error}`;
+                }
+            } catch (err) {
+                resultDiv.className = 'error';
+                resultDiv.innerText = 'Terjadi kesalahan pada server.';
+            }
+        }
+    </script>
+</body>
+</html>
