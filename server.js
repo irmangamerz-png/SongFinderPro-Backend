@@ -16,7 +16,7 @@ const YTDLP_TIMEOUT_MS = 90 * 1000;
 const AUDD_TIMEOUT_MS = 30 * 1000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || '*';
 
-// Konfigurasi CORS (Batasi domain jika diperlukan, atau sesuaikan)
+// Konfigurasi CORS
 app.use(cors({
   origin: FRONTEND_ORIGIN,
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -42,7 +42,7 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE, files: 1 } // Batas 25 MB
 });
 
-// Multi-token AudD dengan failover otomatis
+// Multi-token AudD dengan failover otomatis dari Environment Variables
 const AUDD_TOKENS = (process.env.AUDD_API_TOKENS || process.env.AUDD_API_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean);
 
 function validatePublicUrlOrSearch(query) {
@@ -130,7 +130,9 @@ app.post('/api/recognize-url', async (req, res) => {
     return res.status(400).json({ success: false, message: "URL atau judul lagu tidak valid." });
   }
 
-  const tmpOutputAudio = path.join(os.tmpdir(), `audio_${Date.now()}.mp3`);
+  // Menggunakan Math.random() untuk memastikan nama file 100% unik di os.tmpdir()
+  const randomId = Math.random().toString(36).substring(2, 7);
+  const tmpOutputAudio = path.join(os.tmpdir(), `audio_${Date.now()}_${randomId}.mp3`);
   let actualAudioPath = null;
 
   try {
@@ -227,4 +229,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
-});
+});    
